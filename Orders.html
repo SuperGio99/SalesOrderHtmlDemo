@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>業務下單系統</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f5f7fa;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 0 15px;
+    }
+
+    header {
+      background-color: #2f4050;
+      padding: 10px 0;
+      color: white;
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-btn {
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    .title {
+      flex: 1;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .user-info {
+      font-size: 14px;
+      color: #ccc;
+      margin-left: auto;
+      padding-left: 10px;
+    }
+
+   .side-menu {
+      position: fixed;
+  top: 40px; /* ✅ 從 header 下方開始 */
+  left: 0;
+  width: 250px;
+  height: calc(100% - 50px); /* ✅ 減去 header 高度 */
+  background-color: #e0e7ef;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 5;
+    }
+
+    .side-menu.show {
+      transform: translateX(0);
+    }
+
+    .side-menu a {
+      display: block;
+      text-decoration: none;
+      color: #2f4050;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+      z-index: 4;
+    }
+
+    .overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .form-container {
+      padding: 15px;
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .search-container {
+      margin: 20px auto 10px;
+      max-width: 600px;
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-radius: 6px;
+    }
+
+    #keywordInput {
+      width: 100%;
+      padding: 12px 15px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      transition: box-shadow 0.2s ease;
+      display: block;
+    }
+
+    #keywordInput:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #f0ad4e;
+    }
+
+    #keywordInput:hover {
+      box-shadow: 0 0 0 2px #ccc;
+    }
+
+    .filter-container {
+      margin: 10px 15px 10px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .status-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .status-tag {
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .status-tag:hover {
+      transform: scale(1.05);
+    }
+
+    .status-tag.active {
+      box-shadow: 0 0 0 2px #333;
+    }
+
+    .clear-btn {
+      padding: 6px 10px;
+      background-color: #999;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: flex-start;
+    }
+
+    .clear-btn:hover {
+      background-color: #777;
+    }
+
+    .count-display {
+      font-size: 14px;
+      color: #333;
+      align-self: flex-end;
+    }
+
+    .order-card {
+      position: relative;
+      background-color: #ffffff;
+      border: 1px solid #d1d1d1;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .order-status {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background-color: #f0ad4e;
+      color: white;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .order-label {
+      font-weight: bold;
+      color: #2f4050;
+      margin-bottom: 4px;
+    }
+
+    .order-value {
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .order-date {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  font-size: 14px;
+  color: #888;
+}
+
+    .view-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: #1ab394;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .view-btn:hover {
+      background-color: #17a085;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container header-inner">
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="title">訂單列表</div>
+    <div class="user-info">王小明</div>
+  </div>
+</header>
+
+<div class="side-menu" id="sideMenu">
+  <a href="Orders.html">訂單列表</a>
+  <a href="Create.html">建立訂單</a>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div class="form-container">
+  <div class="search-container">
+    <input type="text" id="keywordInput" placeholder="輸入關鍵字搜尋..." oninput="filterOrders()" />
+  </div>
+
+  <div class="filter-container">
+    <div class="status-tags">
+      <button class="status-tag active" data-status="all" style="background-color:#666;">全部</button>
+      <button class="status-tag" data-status="草稿" style="background-color:#999999;">草稿</button>
+      <button class="status-tag" data-status="已提交" style="background-color:#5cb85c;">已提交</button>
+      <button class="status-tag" data-status="待處理" style="background-color:#f0ad4e;">待處理</button>
+      <button class="status-tag" data-status="退回" style="background-color:#d9534f;">退回</button>
+      <button class="status-tag" data-status="再提交" style="background-color:#f7a35c;">再提交</button>
+      <button class="status-tag" data-status="完成" style="background-color:#337ab7;">完成</button>
+      <button class="status-tag" data-status="作廢" style="background-color:#666666;">作廢</button>
+    </div>
+    <div class="count-display" id="countDisplay">共 4 筆訂單</div>
+  </div>
+
+  <!-- 訂單卡片區塊（範例） -->
+  <div class="order-card" data-status="草稿">
+    <div class="order-status" style="background-color:#999999;">草稿</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO12345678</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">Y</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">7500 TWD</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">Y</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">Y</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">Y</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">Y</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">Y</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="已提交">
+    <div class="order-status" style="background-color:#5cb85c;">已提交</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="待處理">
+    <div class="order-status" style="background-color:#f0ad4e;">待處理</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="退回">
+    <div class="order-status" style="background-color:#d9534f;">退回</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="再提交">
+    <div class="order-status" style="background-color:#f7a35c;">再提交</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="完成">
+    <div class="order-status" style="background-color:#337ab7;">完成</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="完成">
+    <div class="order-status" style="background-color:#337ab7;">完成</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+  <div class="order-card" data-status="作廢">
+    <div class="order-status" style="background-color:#666666;">作廢</div>
+    <div class="order-label">PO 編號</div>
+    <div class="order-value">PO55667788</div>
+    <div class="order-label">VIP 客戶</div>
+    <div class="order-value">N</div>
+    <div class="order-label">總金額</div>
+    <div class="order-value">4500 TWD</div>
+    <a href="review.html" class="view-btn">查看</a>
+    <div class="order-date">訂單時間：2025/08/06 10:35</div>
+  </div>
+
+</div>
+
+<script>
+  let menuVisible = false;
+
+  function toggleMenu() {
+    const sideMenu = document.getElementById("sideMenu");
+    const overlay = document.getElementById("overlay");
+    menuVisible = !menuVisible;
+    sideMenu.classList.toggle("show", menuVisible);
+    overlay.classList.toggle("show", menuVisible);
+  }
+
+  function filterOrders() {
+    const activeTag = document.querySelector(".status-tag.active");
+    const selectedStatus = activeTag ? activeTag.dataset.status : "all";
+    const keyword = document.getElementById("keywordInput").value.trim().toLowerCase();
+    const cards = document.querySelectorAll(".order-card");
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const status = card.getAttribute("data-status");
+      const text = card.textContent.toLowerCase();
+
+      const matchStatus = selectedStatus === "all" || status === selectedStatus;
+      const matchKeyword = keyword === "" || text.includes(keyword);
+
+      if (matchStatus && matchKeyword) {
+        card.style.display = "block";
+        visibleCount++;
+      } else {
+        card.style.display = "none";
+      }
+    });
+
+    updateCountDisplay(visibleCount);
+  }
+
+  function updateCountDisplay(count) {
+    document.getElementById("countDisplay").textContent = `共 ${count} 筆訂單`;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const total = document.querySelectorAll(".order-card").length;
+    updateCountDisplay(total);
+
+    document.querySelectorAll(".status-tag").forEach(tag => {
+      tag.addEventListener("click", () => {
+        document.querySelectorAll(".status-tag").forEach(t => t.classList.remove("active"));
+        tag.classList.add("active");
+        filterOrders();
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

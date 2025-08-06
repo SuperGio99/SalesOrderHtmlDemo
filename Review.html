@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>業務下單系統</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f5f7fa;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 0 15px;
+    }
+
+    header {
+      background-color: #2f4050;
+      padding: 10px 0;
+      color: white;
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-btn {
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    .title {
+      flex: 1;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .user-info {
+      font-size: 14px;
+      color: #ccc;
+      margin-left: auto;
+      padding-left: 10px;
+    }
+
+    .side-menu {
+      position: fixed;
+  top: 40px; /* ✅ 從 header 下方開始 */
+  left: 0;
+  width: 250px;
+  height: calc(100% - 50px); /* ✅ 減去 header 高度 */
+  background-color: #e0e7ef;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 5;
+    }
+
+    .side-menu.show {
+      transform: translateX(0);
+    }
+
+    .side-menu a {
+      display: block;
+      text-decoration: none;
+      color: #2f4050;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+      z-index: 4;
+    }
+
+    .overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .form-container {
+      padding: 15px;
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .review-group {
+      margin-bottom: 16px;
+      background-color: #ffffff;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #d1d1d1;
+    }
+
+    .review-label {
+      font-weight: bold;
+      color: #2f4050;
+      margin-bottom: 4px;
+    }
+
+    .review-value {
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .item-block {
+      border: 1px solid #d1d1d1;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #ffffff;
+      border-radius: 6px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .back-btn,
+    .submit-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      background-color: #ccc;
+      color: #2f4050;
+    }
+
+    .submit-btn {
+      background-color: #1ab394;
+      color: white;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #2f4050;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container header-inner">
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="title">訂單內容檢視</div>
+    <div class="user-info">王小明</div>
+  </div>
+</header>
+
+<div class="side-menu" id="sideMenu">
+  <a href="Orders.html">訂單列表</a>
+  <a href="Create.html">建立訂單</a>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div class="form-container">
+  <div class="review-group">
+    <div class="review-label">客戶採購單號碼</div>
+    <div class="review-value">PO12345678</div>
+
+    <div class="review-label">VIP客戶</div>
+    <div class="review-value">Y</div>
+  </div>
+
+  <div class="item-block">
+    <div class="review-label">料號代碼</div>
+    <div class="review-value">ABC-001</div>
+
+    <div class="review-label">數量</div>
+    <div class="review-value">100</div>
+
+    <div class="review-label">單位</div>
+    <div class="review-value">PCS</div>
+
+    <div class="review-label">總金額</div>
+    <div class="review-value">5000</div>
+
+    <div class="review-label">幣別</div>
+    <div class="review-value">TWD</div>
+  </div>
+
+  <div class="item-block">
+    <div class="review-label">料號代碼</div>
+    <div class="review-value">XYZ-002</div>
+
+    <div class="review-label">數量</div>
+    <div class="review-value">50</div>
+
+    <div class="review-label">單位</div>
+    <div class="review-value">PCS</div>
+
+    <div class="review-label">總金額</div>
+    <div class="review-value">2500</div>
+
+    <div class="review-label">幣別</div>
+    <div class="review-value">TWD</div>
+  </div>
+
+  <div class="btn-group">
+    <button class="back-btn" onclick="history.back()">返回修改</button>
+    <button class="submit-btn" onclick="submitReview()">確認送出</button>
+  </div>
+</div>
+
+<div id="toast" class="toast">資料已成功送出！</div>
+
+<script>
+  let menuVisible = false;
+
+  function toggleMenu() {
+    const sideMenu = document.getElementById("sideMenu");
+    const overlay = document.getElementById("overlay");
+    menuVisible = !menuVisible;
+    sideMenu.classList.toggle("show", menuVisible);
+    overlay.classList.toggle("show", menuVisible);
+  }
+
+  function submitReview() {
+    showToast("資料已成功送出！");
+    // 這裡可以加上實際送出邏輯，例如 fetch 或導頁
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+</script>
+
+</body>
+</html>
