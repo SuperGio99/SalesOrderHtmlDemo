@@ -55,16 +55,16 @@
 
     .side-menu {
       position: fixed;
-  top: 40px; /* ✅ 從 header 下方開始 */
-  left: 0;
-  width: 250px;
-  height: calc(100% - 50px); /* ✅ 減去 header 高度 */
-  background-color: #e0e7ef;
-  padding: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 5;
+      top: 40px; /* 從 header 下方開始 */
+      left: 0;
+      width: 250px;
+      height: calc(100% - 50px); /* 減去 header 高度 */
+      background-color: #e0e7ef;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 5;
     }
 
     .side-menu.show {
@@ -107,6 +107,7 @@
 
     .form-group {
       margin-bottom: 12px;
+      position: relative; /* 用於下拉清單定位 */
     }
 
     label {
@@ -147,15 +148,24 @@
     }
 
     .remove-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background-color: #ffdddd;
-      border: none;
-      padding: 4px 8px;
-      cursor: pointer;
-      border-radius: 4px;
-      color: #333;
+        padding: 6px 8px;      /* 垂直 padding 縮小一些 */
+        font-size: 16px;
+        min-width: 26px;
+        min-height: 26px;      /* 高度縮小但還是有點擊區域 */
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background-color: #ffdddd;
+        border: none;
+        border-radius: 4px;
+        color: #333;
+        z-index: 10;
     }
 
     .add-btn-wrapper {
@@ -184,16 +194,55 @@
       cursor: pointer;
     }
 
-    @media (min-width: 600px) {
-      .item-blocks {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
+    /* 數量輸入框按鈕樣式 */
+    .quantity-group {
+      display: flex;
+      align-items: center;
+      max-width: 160px;
+    }
+    .quantity-btn {
+      background-color: #eee;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .quantity-btn:active {
+      background-color: #ddd;
+    }
+    .quantity-input {
+      text-align: center;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+      border-left: none;
+      border-right: none;
+      width: 60px;
+      font-size: 16px;
+      padding: 6px;
+    }
 
-      .item-block {
-        flex: 1 1 45%;
-      }
+    /* 下拉選單 */
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px; /* 約5行 */
+      overflow-y: auto;
+      z-index: 10000;
+      box-sizing: border-box;
+      display: none;
+    }
+    .autocomplete-item {
+      padding: 8px;
+      cursor: pointer;
+    }
+    .autocomplete-item:hover {
+      background: #f0f0f0;
     }
   </style>
 </head>
@@ -216,13 +265,20 @@
 
 <div class="form-container">
   <div class="form-group">
-    <label for="po-number">客戶採購單號碼</label>
-    <input type="text" id="po-number" name="po-number" />
+    <label for="cust-number">客戶代碼/名稱</label>
+    <input type="text" id="cust-number" name="cust-number" autocomplete="off" />
+    <div class="autocomplete-list"></div>
   </div>
 
   <div class="form-group">
-    <label for="vip">VIP客戶</label>
-    <input type="text" id="vip" name="vip" placeholder="Y 或 N" />
+    <label for="recipient">收貨人代碼/名稱</label>
+    <input type="text" id="recipient" name="recipient" autocomplete="off" />
+    <div class="autocomplete-list"></div>
+  </div>
+
+  <div class="form-group">
+    <label for="deliveryDate">交貨日期</label>
+    <input type="text" id="deliveryDate" name="deliveryDate" />
   </div>
 
   <div id="item-blocks"></div>
@@ -246,6 +302,56 @@
     overlay.classList.toggle("show", menuVisible);
   }
 
+  // 模擬API資料
+  const mockData = {
+    customer: ["C001 王小明公司", "C002 陳大華商行", "C003 李小美貿易", "C004 黃阿成企業", "C005 吳麗華股份", "C006 測試公司"],
+    recipient: ["R001 收貨人1", "R002 收貨人2", "R003 收貨人3", "R004 收貨人4", "R005 收貨人5", "R006 收貨人6"],
+    product: ["P001 商品A", "P002 商品B", "P003 商品C", "P004 商品D", "P005 商品E", "P006 商品F"]
+  };
+
+  // 建立下拉建議功能
+  function setupAutocomplete(inputEl, type) {
+    const wrapper = inputEl.parentElement;
+    const listEl = wrapper.querySelector('.autocomplete-list');
+
+    function closeList() {
+      listEl.style.display = 'none';
+      listEl.innerHTML = '';
+    }
+
+    inputEl.addEventListener('input', function () {
+      const val = this.value.trim();
+      if (!val) {
+        closeList();
+        return;
+      }
+      const results = mockData[type].filter(item => item.toLowerCase().includes(val.toLowerCase()));
+
+      if (results.length === 0) {
+        closeList();
+        return;
+      }
+
+      listEl.innerHTML = results.slice(0, 5).map(item => `<div class="autocomplete-item">${item}</div>`).join('');
+      listEl.style.display = 'block';
+    });
+
+    listEl.addEventListener('click', function (e) {
+      if (e.target.classList.contains('autocomplete-item')) {
+        inputEl.value = e.target.textContent;
+        closeList();
+        inputEl.focus();
+      }
+    });
+
+    // 點擊外部隱藏建議列表
+    document.addEventListener('click', function (e) {
+      if (!wrapper.contains(e.target)) {
+        closeList();
+      }
+    });
+  }
+
   function addItemBlock() {
     const container = document.getElementById("item-blocks");
     const block = document.createElement("div");
@@ -255,15 +361,20 @@
     block.innerHTML = `
       ${showRemove ? `<button class="remove-btn" onclick="removeItemBlock(this)">－</button>` : ""}
       <div class="form-group">
-        <label>料號代碼</label>
-        <input type="text" name="item-code-${itemCount}">
+        <label>產品代碼</label>
+        <input type="text" name="item-code-${itemCount}" autocomplete="off" />
+        <div class="autocomplete-list"></div>
       </div>
       <div class="form-group">
         <label>數量</label>
-        <input type="number" step="0.001" name="quantity-${itemCount}">
+        <div class="quantity-group">
+          <button type="button" class="quantity-btn btn-decrement">-</button>
+          <input type="text" inputmode="numeric" pattern="\\d*" name="quantity-${itemCount}" class="quantity-input" value="1" min="1">
+          <button type="button" class="quantity-btn btn-increment">+</button>
+        </div>
       </div>
       <div class="form-group">
-        <label>單位</label>
+        <label>單價(含稅)</label>
         <input type="text" name="unit-${itemCount}">
       </div>
       <div class="form-group">
@@ -272,7 +383,7 @@
       </div>
       <div class="form-group">
         <label>幣別</label>
-        <input type="text" name="currency-${itemCount}" value="TWD">
+        <input type="text" name="currency-${itemCount}" value="TWD" readonly>
       </div>
     `;
 
@@ -280,6 +391,10 @@
     requestAnimationFrame(() => {
       block.classList.add("show");
     });
+
+    // 綁定 autocomplete
+    const prodInput = block.querySelector(`input[name="item-code-${itemCount}"]`);
+    setupAutocomplete(prodInput, 'product');
 
     itemCount++;
   }
@@ -297,7 +412,38 @@
     }
   }
 
-  window.onload = () => addItemBlock();
+  // 數量加減與輸入限制
+  document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('btn-decrement')) {
+      const input = e.target.closest('.quantity-group').querySelector('.quantity-input');
+      let value = parseInt(input.value, 10) || 0;
+      if (value > parseInt(input.min || '1', 10)) {
+        input.value = value - 1;
+      }
+    }
+    if (e.target.classList.contains('btn-increment')) {
+      const input = e.target.closest('.quantity-group').querySelector('.quantity-input');
+      let value = parseInt(input.value, 10) || 0;
+      input.value = value + 1;
+    }
+  });
+
+  // 限制只能輸入數字
+  document.addEventListener('input', function (e) {
+    if (e.target.classList.contains('quantity-input')) {
+      e.target.value = e.target.value.replace(/\D/g, '');
+      if (e.target.value === '' || parseInt(e.target.value, 10) < 1) {
+        e.target.value = 1;
+      }
+    }
+  });
+
+  // 頁面載入時初始化
+  window.addEventListener('load', () => {
+    setupAutocomplete(document.getElementById('cust-number'), 'customer');
+    setupAutocomplete(document.getElementById('recipient'), 'recipient');
+    addItemBlock();
+  });
 </script>
 
 </body>
